@@ -2,17 +2,17 @@ package messages
 
 import "encoding/xml"
 
-type helpConfig struct {
+type HelpConfig struct {
 	XMLName xml.Name `xml:"help"`
 	Text    string   `xml:",chardata"`
 	Format  string   `xml:"format,attr"`
 }
 
-type helpResponse struct {
+type HelpResponse struct {
 	XMLName    xml.Name `xml:"help_response"`
 	Text       string   `xml:",chardata"`
 	StatusText string   `xml:"status_text,attr"`
-	Status     string   `xml:"status,attr"`
+	Status     int   `xml:"status,attr"`
 	DeleteScan struct {
 		Text       string `xml:",chardata"`
 		Attributes struct {
