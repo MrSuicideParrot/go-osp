@@ -12,8 +12,10 @@ import (
 	"github.com/mrsuicideparrot/go-osp/osp/vtgroups"
 	"golang.org/x/net/html/charset"
 	"io/ioutil"
+	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Client struct{
@@ -22,6 +24,11 @@ type Client struct{
 	tlsConf *tls.Config
 }
 
+var ConnectionTimeout  time.Duration
+
+func init()  {
+	ConnectionTimeout = time.Second*2
+}
 
 func New(host string, port int, clientCertificatePath, clientKeyPath, certificateAuthorityPath string)  (*Client, error){
 	cl := Client{}
@@ -60,7 +67,8 @@ func New(host string, port int, clientCertificatePath, clientKeyPath, certificat
 }
 
 func (cl *Client)sendRequest(req interface{}, resp interface{}) error{
-	conn, err := tls.Dial("tcp", cl.host + ":" + cl.port, cl.tlsConf)
+	dialer := &net.Dialer{Timeout:ConnectionTimeout}
+	conn, err := tls.DialWithDialer(dialer,"tcp", cl.host + ":" + cl.port, cl.tlsConf)
 	if err != nil{
 		return err
 	}
