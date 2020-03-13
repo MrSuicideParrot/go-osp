@@ -26,7 +26,7 @@ type GetScansResponse struct {
 			Result []struct {
 				Text     string `xml:",chardata"`
 				Host     string `xml:"host,attr"`
-				Severity string `xml:"severity,attr"`
+				Severity float32 `xml:"severity,attr"`
 				Port     string `xml:"port,attr"`
 				TestID   string `xml:"test_id,attr"`
 				Name     string `xml:"name,attr"`
