@@ -1,6 +1,8 @@
 package ports
 
-var WellKnownPortList = []int{
+type PortList []int
+
+var WellKnownPortList = PortList{
 0,
 1,
 2,
@@ -6374,7 +6376,7 @@ var Top200NmapPorts = []int{
 	50000,
 }
 
-var CommonPorts = []int{
+var CommonPorts = PortList{
 	1,
 	3,
 	4,

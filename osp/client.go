@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mrsuicideparrot/go-osp/osp/messages"
-	ports2 "github.com/mrsuicideparrot/go-osp/osp/ports"
+	"github.com/mrsuicideparrot/go-osp/osp/ports"
 	"github.com/mrsuicideparrot/go-osp/osp/profiles"
 	"github.com/mrsuicideparrot/go-osp/osp/vtgroups"
 	"golang.org/x/net/html/charset"
@@ -18,18 +18,20 @@ import (
 	"time"
 )
 
+// Client struct with connection details of an OSP server
 type Client struct{
 	host string
 	port string
 	tlsConf *tls.Config
 }
 
-var ConnectionTimeout  time.Duration
+var connectionTimeout time.Duration
 
 func init()  {
-	ConnectionTimeout = time.Second*2
+	connectionTimeout = time.Second*2
 }
 
+// Creates a client struct  with the provided details
 func New(host string, port int, clientCertificatePath, clientKeyPath, certificateAuthorityPath string)  (*Client, error){
 	cl := Client{}
 
@@ -67,7 +69,7 @@ func New(host string, port int, clientCertificatePath, clientKeyPath, certificat
 }
 
 func (cl *Client)sendRequest(req interface{}, resp interface{}) error{
-	dialer := &net.Dialer{Timeout:ConnectionTimeout}
+	dialer := &net.Dialer{Timeout: connectionTimeout}
 	conn, err := tls.DialWithDialer(dialer,"tcp", cl.host + ":" + cl.port, cl.tlsConf)
 	if err != nil{
 		return err
@@ -93,7 +95,7 @@ func (cl *Client)sendRequest(req interface{}, resp interface{}) error{
 
 	return nil
 }
-
+// Retrieve a scan result
 func (cl *Client)GetScan(uuid string, details bool) (*messages.GetScansResponse, error){
 
 	m := &messages.GetScansRequest{
@@ -110,6 +112,7 @@ func (cl *Client)GetScan(uuid string, details bool) (*messages.GetScansResponse,
 	return resp, nil
 }
 
+// Get openvas version
 func (cl *Client)GetVersion()(*messages.GetVersionResponse, error){
 
 	m := &messages.GetVersionRequest{}
@@ -122,6 +125,7 @@ func (cl *Client)GetVersion()(*messages.GetVersionResponse, error){
 	return resp, nil
 }
 
+// Remove scan results on server
 func (cl *Client)DeleteScan(uuid string)(*messages.DeleteScanResponse, error){
 
 	m := &messages.DeleteScanRequest{
@@ -137,22 +141,25 @@ func (cl *Client)DeleteScan(uuid string)(*messages.DeleteScanResponse, error){
 	return resp, nil
 }
 
-func (cl *Client)StartScan(target string, ports []int, vtGroup vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
+// Start a new openvas scan with the provided details.
+func (cl *Client)StartScan(target string, portList ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
+
+	groups := []messages.VtGroup{}
+
+	for _,i := range vtGroup {
+		groups = append(groups, messages.VtGroup{Filter: "family=" + string(i)})
+	}
 
 	m := &messages.StartScanRequest{
 		Target: target,
-		Ports: portArrayToString(ports2.CommonPorts),
+		Ports: portArrayToString(portList),
 		ScannerParams: []messages.ScannerParam{
 			{
 				Profile:    string(profile),
 			},
 		},
 		VtSelection: messages.VtSelection{
-			VtGroups:  []messages.VtGroup{
-				{
-					Filter: "family=" + string(vtGroup),
-				},
-			},
+			VtGroups:  groups,
 		},
 	}
 
@@ -198,6 +205,7 @@ func stringToPortArray(ports string) []int{
 	return pI
 }
 
+// Stop a scan
 func (cl *Client)StopScan(uuid string)(*messages.StopScanResponse, error){
 
 	m := &messages.StopScanRequest{
