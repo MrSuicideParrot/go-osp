@@ -7,4 +7,5 @@ const (
 	ProductDetection  = VtGroup("Product detection")
 	DefaultAccounts  = VtGroup("Default Accounts")
 	ShellRemotely = VtGroup("Gain a shell remotely")
+	BruteLogins = VtGroup("Brute force attacks")
 )
