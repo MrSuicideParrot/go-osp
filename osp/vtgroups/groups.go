@@ -8,4 +8,5 @@ const (
 	DefaultAccounts  = VtGroup("Default Accounts")
 	ShellRemotely = VtGroup("Gain a shell remotely")
 	BruteLogins = VtGroup("Brute force attacks")
+	PortScanner= VtGroup("Port scanners")
 )
