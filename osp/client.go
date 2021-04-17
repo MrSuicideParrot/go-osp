@@ -19,29 +19,29 @@ import (
 )
 
 // Client struct with connection details of an OSP server
-type Client struct{
-	host string
-	port string
+type Client struct {
+	host    string
+	port    string
 	tlsConf *tls.Config
 }
 
 var connectionTimeout time.Duration
 
-func init()  {
-	connectionTimeout = time.Second*2
+func init() {
+	connectionTimeout = time.Second * 2
 }
 
 // Creates a client struct  with the provided details
-func New(host string, port int, clientCertificatePath, clientKeyPath, certificateAuthorityPath string)  (*Client, error){
+func New(host string, port int, clientCertificatePath, clientKeyPath, certificateAuthorityPath string) (*Client, error) {
 	cl := Client{}
 
 	cert, err := tls.LoadX509KeyPair(clientCertificatePath, clientKeyPath)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	caRaw, err := ioutil.ReadFile(certificateAuthorityPath)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
@@ -49,9 +49,9 @@ func New(host string, port int, clientCertificatePath, clientKeyPath, certificat
 	rootPool.AppendCertsFromPEM([]byte(caRaw))
 
 	cl.tlsConf = &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		RootCAs: rootPool,
-		InsecureSkipVerify:true,
+		Certificates:       []tls.Certificate{cert},
+		RootCAs:            rootPool,
+		InsecureSkipVerify: true,
 	}
 
 	cl.host = host
@@ -59,8 +59,8 @@ func New(host string, port int, clientCertificatePath, clientKeyPath, certificat
 
 	resp, err := cl.GetVersion()
 
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	} else if resp.Status != 200 {
 		return nil, errors.New("Response message " + strconv.Itoa(resp.Status))
 	}
@@ -68,20 +68,20 @@ func New(host string, port int, clientCertificatePath, clientKeyPath, certificat
 	return &cl, nil
 }
 
-func (cl *Client)sendRequest(req interface{}, resp interface{}) error{
+func (cl *Client) sendRequest(req interface{}, resp interface{}) error {
 	dialer := &net.Dialer{Timeout: connectionTimeout}
-	conn, err := tls.DialWithDialer(dialer,"tcp", cl.host + ":" + cl.port, cl.tlsConf)
-	if err != nil{
+	conn, err := tls.DialWithDialer(dialer, "tcp", cl.host+":"+cl.port, cl.tlsConf)
+	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
 	reqXML, err := xml.Marshal(req)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
-	if _, err := conn.Write(reqXML); err != nil{
+	if _, err := conn.Write(reqXML); err != nil {
 		return err
 	}
 
@@ -95,28 +95,29 @@ func (cl *Client)sendRequest(req interface{}, resp interface{}) error{
 
 	return nil
 }
+
 // Retrieve a scan result
-func (cl *Client)GetScan(uuid string, details bool) (*messages.GetScansResponse, error){
+func (cl *Client) GetScan(uuid string, details bool) (*messages.GetScansResponse, error) {
 
 	m := &messages.GetScansRequest{
 		ScanID:  uuid,
 		Details: details,
 	}
 
-	resp :=  &messages.GetScansResponse{}
+	resp := &messages.GetScansResponse{}
 
-	if err := cl.sendRequest(m,resp); err != nil{
-		return nil,err
+	if err := cl.sendRequest(m, resp); err != nil {
+		return nil, err
 	}
 
 	return resp, nil
 }
 
 // Get openvas version
-func (cl *Client)GetVersion()(*messages.GetVersionResponse, error){
+func (cl *Client) GetVersion() (*messages.GetVersionResponse, error) {
 
 	m := &messages.GetVersionRequest{}
-	resp :=  &messages.GetVersionResponse{}
+	resp := &messages.GetVersionResponse{}
 
 	if err := cl.sendRequest(&m, &resp); err != nil {
 		return nil, err
@@ -126,7 +127,7 @@ func (cl *Client)GetVersion()(*messages.GetVersionResponse, error){
 }
 
 // Remove scan results on server
-func (cl *Client)DeleteScan(uuid string)(*messages.DeleteScanResponse, error){
+func (cl *Client) DeleteScan(uuid string) (*messages.DeleteScanResponse, error) {
 
 	m := &messages.DeleteScanRequest{
 		ScanID: uuid,
@@ -134,7 +135,7 @@ func (cl *Client)DeleteScan(uuid string)(*messages.DeleteScanResponse, error){
 
 	resp := &messages.DeleteScanResponse{}
 
-	if err := cl.sendRequest(m, resp); err != nil{
+	if err := cl.sendRequest(m, resp); err != nil {
 		return nil, err
 	}
 
@@ -142,45 +143,108 @@ func (cl *Client)DeleteScan(uuid string)(*messages.DeleteScanResponse, error){
 }
 
 // Start a new openvas scan with the provided details.
-func (cl *Client)StartScan(target string, portList ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
+func (cl *Client) StartScan(target string, portList ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
 
 	groups := []messages.VtGroup{}
 
-	for _,i := range vtGroup {
+	for _, i := range vtGroup {
 		groups = append(groups, messages.VtGroup{Filter: "family=" + string(i)})
 	}
 
 	m := &messages.StartScanRequest{
 		Target: target,
-		Ports: portArrayToString(portList),
+		Ports:  portArrayToString(portList),
 		ScannerParams: []messages.ScannerParam{
 			{
-				Profile:    string(profile),
+				Profile: string(profile),
 			},
 		},
 		VtSelection: messages.VtSelection{
-			VtGroups:  groups,
+			VtGroups: groups,
 		},
 	}
 
 	resp := &messages.StartScanResponse{}
 
-	if err := cl.sendRequest(m, resp); err != nil{
+	if err := cl.sendRequest(m, resp); err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func portArrayToString(ports []int) string{
+type StartScan struct {
+	XMLName       xml.Name                `xml:"start_scan"`
+	Text          string                  `xml:",chardata"`
+	Parallel      string                  `xml:"parallel,attr"`
+	ScannerParams []messages.ScannerParam `xml:"scanner_params"`
+	VtSelection   messages.VtSelection    `xml:"vt_selection"`
+	Targets       struct {
+		Text    string   `xml:",chardata"`
+		Targets []Target `xml:"target"`
+	} `xml:"targets"`
+}
+
+type Target struct {
+	Text          string `xml:",chardata"`
+	Hosts         string `xml:"hosts"`
+	Ports         string `xml:"ports"`
+	Credentials   string `xml:"credentials"`
+	ExcludeHosts  string `xml:"exclude_hosts"`
+	FinishedHosts string `xml:"finished_hosts"`
+	AliveTest     string `xml:"alive_test"`
+}
+
+func (cl *Client) StartScanV2(target string, portList ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
+
+	groups := []messages.VtGroup{}
+
+	for _, i := range vtGroup {
+		groups = append(groups, messages.VtGroup{Filter: "family=" + string(i)})
+	}
+
+	m := &StartScan{
+		ScannerParams: []messages.ScannerParam{
+			{
+				Profile: string(profile),
+			},
+		},
+		VtSelection: messages.VtSelection{
+			VtGroups: groups,
+		},
+		Targets: struct {
+			Text    string   `xml:",chardata"`
+			Targets []Target `xml:"target"`
+		}(struct {
+			Text    string
+			Targets []Target
+		}{Text: "", Targets: []Target{
+			{
+				Hosts:     target,
+				Ports:     portArrayToString(portList),
+				AliveTest: "0",
+			},
+		}}),
+	}
+
+	resp := &messages.StartScanResponse{}
+
+	if err := cl.sendRequest(m, resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func portArrayToString(ports []int) string {
 	var result string
 
-	if len(ports) >= 1{
+	if len(ports) >= 1 {
 		result = strconv.Itoa(ports[0])
 	}
 
 	if len(ports) > 1 {
-		for _, p := range ports[1:]{
+		for _, p := range ports[1:] {
 			result += ", " + strconv.Itoa(p)
 		}
 	}
@@ -188,14 +252,14 @@ func portArrayToString(ports []int) string{
 	return result
 }
 
-func stringToPortArray(ports string) []int{
-	pS := strings.Split(ports,",")
+func stringToPortArray(ports string) []int {
+	pS := strings.Split(ports, ",")
 
 	var pI []int
 
-	for _,i := range pS{
+	for _, i := range pS {
 		iI, err := strconv.Atoi(i)
-		if err != nil{
+		if err != nil {
 			fmt.Errorf(err.Error())
 			continue
 		}
@@ -206,27 +270,27 @@ func stringToPortArray(ports string) []int{
 }
 
 // Stop a scan
-func (cl *Client)StopScan(uuid string)(*messages.StopScanResponse, error){
+func (cl *Client) StopScan(uuid string) (*messages.StopScanResponse, error) {
 
 	m := &messages.StopScanRequest{
-		ScanID:uuid,
+		ScanID: uuid,
 	}
 	resp := &messages.StopScanResponse{}
 
-	if err := cl.sendRequest(m, resp); err != nil{
+	if err := cl.sendRequest(m, resp); err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (cl *Client)Help()(*messages.HelpResponse, error){
+func (cl *Client) Help() (*messages.HelpResponse, error) {
 	m := &messages.HelpConfig{
-		Format:  "xml",
+		Format: "xml",
 	}
 	resp := &messages.HelpResponse{}
 
-	if err := cl.sendRequest(m, resp); err != nil{
+	if err := cl.sendRequest(m, resp); err != nil {
 		return nil, err
 	}
 
