@@ -173,28 +173,6 @@ func (cl *Client) StartScan(target string, portList ports.PortList, vtGroup []vt
 	return resp, nil
 }
 
-type StartScan struct {
-	XMLName       xml.Name                `xml:"start_scan"`
-	Text          string                  `xml:",chardata"`
-	Parallel      string                  `xml:"parallel,attr"`
-	ScannerParams []messages.ScannerParam `xml:"scanner_params"`
-	VtSelection   messages.VtSelection    `xml:"vt_selection"`
-	Targets       struct {
-		Text    string   `xml:",chardata"`
-		Targets []Target `xml:"target"`
-	} `xml:"targets"`
-}
-
-type Target struct {
-	Text          string `xml:",chardata"`
-	Hosts         string `xml:"hosts"`
-	Ports         string `xml:"ports"`
-	Credentials   string `xml:"credentials"`
-	ExcludeHosts  string `xml:"exclude_hosts"`
-	FinishedHosts string `xml:"finished_hosts"`
-	AliveTest     string `xml:"alive_test"`
-}
-
 func (cl *Client) StartScanV2(target string, portList ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
 
 	groups := []messages.VtGroup{}
@@ -203,7 +181,7 @@ func (cl *Client) StartScanV2(target string, portList ports.PortList, vtGroup []
 		groups = append(groups, messages.VtGroup{Filter: "family=" + string(i)})
 	}
 
-	m := &StartScan{
+	m := &messages.StartScan{
 		ScannerParams: []messages.ScannerParam{
 			{
 				Profile: string(profile),
@@ -213,18 +191,18 @@ func (cl *Client) StartScanV2(target string, portList ports.PortList, vtGroup []
 			VtGroups: groups,
 		},
 		Targets: struct {
-			Text    string   `xml:",chardata"`
-			Targets []Target `xml:"target"`
+			Text    string            `xml:",chardata"`
+			Targets []messages.Target `xml:"target"`
 		}(struct {
 			Text    string
-			Targets []Target
-		}{Text: "", Targets: []Target{
+			Targets []messages.Target
+		}{Text: "", Targets: []messages.Target{
 			{
 				Hosts:     target,
 				Ports:     portArrayToString(portList),
 				AliveTest: "0",
-			},
-		}}),
+			}},
+		}),
 	}
 
 	resp := &messages.StartScanResponse{}
