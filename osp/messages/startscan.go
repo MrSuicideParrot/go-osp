@@ -46,13 +46,21 @@ type StartScan struct {
 }
 
 type Target struct {
-	Text          string `xml:",chardata"`
-	Hosts         string `xml:"hosts"`
-	Ports         string `xml:"ports"`
-	Credentials   string `xml:"credentials"`
-	ExcludeHosts  string `xml:"exclude_hosts"`
-	FinishedHosts string `xml:"finished_hosts"`
-	AliveTest     string `xml:"alive_test"`
+	Text             string `xml:",chardata"`
+	Hosts            string `xml:"hosts"`
+	Ports            string `xml:"ports"`
+	Credentials      string `xml:"credentials"`
+	ExcludeHosts     string `xml:"exclude_hosts"`
+	FinishedHosts    string `xml:"finished_hosts"`
+	AliveTest        string `xml:"alive_test"`
+	AliveTestMethods struct {
+		Text          string `xml:",chardata"`
+		Icmp          string `xml:"icmp"`
+		TcpAck        string `xml:"tcp_ack"`
+		TcpSyn        string `xml:"tcp_syn"`
+		Arp           string `xml:"arp"`
+		ConsiderAlive string `xml:"consider_alive"`
+	} `xml:"alive_test_methods"`
 }
 
 type StartScanResponse struct {
