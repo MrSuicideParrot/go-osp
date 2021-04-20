@@ -173,7 +173,7 @@ func (cl *Client) StartScan(target string, portList ports.PortList, vtGroup []vt
 	return resp, nil
 }
 
-func (cl *Client) StartScanV2(target string, portList ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
+func (cl *Client) StartScanV2(target string, portListTCP ports.PortList, portListUDP ports.PortList, vtGroup []vtgroups.VtGroup, profile profiles.Profile) (*messages.StartScanResponse, error) {
 
 	groups := []messages.VtGroup{}
 
@@ -199,8 +199,16 @@ func (cl *Client) StartScanV2(target string, portList ports.PortList, vtGroup []
 		}{Text: "", Targets: []messages.Target{
 			{
 				Hosts:     target,
-				Ports:     portArrayToString(portList),
-				AliveTest: "0",
+				Ports:     "T:" + portArrayToString(portListTCP) + ",U:" + portArrayToString(portListUDP),
+				AliveTest: "1",
+				AliveTestMethods: struct {
+					Text          string `xml:",chardata"`
+					Icmp          string `xml:"icmp"`
+					TcpAck        string `xml:"tcp_ack"`
+					TcpSyn        string `xml:"tcp_syn"`
+					Arp           string `xml:"arp"`
+					ConsiderAlive string `xml:"consider_alive"`
+				}{ConsiderAlive: "1"},
 			}},
 		}),
 	}
