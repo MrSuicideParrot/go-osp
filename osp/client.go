@@ -200,7 +200,7 @@ func (cl *Client) StartScanV2(target string, portListTCP ports.PortList, portLis
 			{
 				Hosts:     target,
 				Ports:     "T:" + portArrayToString(portListTCP) + ",U:" + portArrayToString(portListUDP),
-				AliveTest: "1",
+				AliveTest: "8",
 				AliveTestMethods: struct {
 					Text          string `xml:",chardata"`
 					Icmp          string `xml:"icmp"`
@@ -208,7 +208,7 @@ func (cl *Client) StartScanV2(target string, portListTCP ports.PortList, portLis
 					TcpSyn        string `xml:"tcp_syn"`
 					Arp           string `xml:"arp"`
 					ConsiderAlive string `xml:"consider_alive"`
-				}{ConsiderAlive: "1"},
+				}{},
 			}},
 		}),
 	}
